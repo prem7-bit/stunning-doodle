@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hairspring</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=DM+Mono:wght@400;500&family=Hanken+Grotesk:wght@400..700&display=swap">
+<style>
+body{margin:0}
+/* Layout: two-column hero (copy + a live, configurable watch), then full-width bands that each do one job. */
+:root{
+  --bg:#EDF0EE; --fg:#10201A; --muted:#56655E; --line:#C6CFCA; --panel:#E1E7E3; --accent:#8A5F14; --green:#14412F;
+  --f-display:'Bodoni Moda','Bodoni 72','Didot',Georgia,serif;
+  --f-body:'Hanken Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'DM Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--bg:#0C1512; --fg:#E7EDE8; --muted:#92A39B; --line:#25362F; --panel:#13211C; --accent:#D8A64E; --green:#7FB89A; color-scheme:dark}
+}
+:root[data-theme="dark"]{--bg:#0C1512; --fg:#E7EDE8; --muted:#92A39B; --line:#25362F; --panel:#13211C; --accent:#D8A64E; --green:#7FB89A; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--fg);
+  font:400 16px/1.6 var(--f-body);
+  padding-block:20px 0;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap{max-width:1120px; margin:0 auto}
+button{font:inherit; color:inherit; cursor:pointer}
+:focus-visible{outline:2px solid var(--accent); outline-offset:3px}
+h1,h2,h3{font-family:var(--f-display); font-weight:500; text-wrap:balance; margin:0}
+p{margin:0}
+.mono{font-family:var(--f-mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+
+/* top bar */
+.top{display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:12px 24px; padding-bottom:16px; border-bottom:1px solid var(--line)}
+.mark{font-family:var(--f-display); font-style:italic; font-size:26px; font-weight:500}
+.nav{display:flex; flex-wrap:wrap; gap:4px 18px}
+.nav button{background:none; border:0; padding:4px 0; font-family:var(--f-mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+.nav button:hover{color:var(--fg)}
+
+/* hero */
+.hero{display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr); gap:clamp(28px,5vw,72px); padding-block:clamp(32px,6vw,72px); align-items:start}
+.hero h1{font-size:clamp(2.4rem,6.2vw,4.6rem); line-height:1.04; letter-spacing:-.01em}
+.hero h1 em{color:var(--accent); font-weight:400}
+.lede{font-size:clamp(1.05rem,2vw,1.2rem); max-width:34em; margin-top:22px; color:var(--muted)}
+.lede strong{color:var(--fg); font-weight:600}
+.hero-actions{display:flex; flex-wrap:wrap; gap:10px; margin-top:28px}
+.btn{border:1px solid var(--fg); background:transparent; padding:10px 16px; border-radius:3px; font-family:var(--f-mono); font-size:12px; letter-spacing:.1em; text-transform:uppercase}
+.btn.solid{background:var(--fg); color:var(--bg)}
+.btn:hover{border-color:var(--accent)}
+
+/* watch stage */
+.stage{min-width:0}
+.watchbox{width:min(100%,330px); margin:0 auto}
+.watchbox svg{display:block; width:100%; height:auto; overflow:visible}
+.digital{display:flex; justify-content:space-between; gap:12px; margin:6px auto 0; width:min(100%,330px); font-family:var(--f-mono); font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums}
+.ctls{margin-top:22px; display:grid; gap:10px; border-top:1px solid var(--line); padding-top:16px}
+.ctl{display:grid; grid-template-columns:72px 1fr; gap:10px; align-items:center}
+.opts{display:flex; flex-wrap:wrap; gap:8px; min-width:0}
+.seg{border:1px solid var(--line); background:transparent; padding:6px 12px; border-radius:3px; font-family:var(--f-mono); font-size:12px; letter-spacing:.06em}
+.seg[aria-pressed="true"]{background:var(--fg); color:var(--bg); border-color:var(--fg)}
+.sw{width:30px; height:30px; border-radius:50%; border:2px solid transparent; outline:1px solid var(--line); outline-offset:1px; padding:0}
+.sw[aria-pressed="true"]{border-color:var(--bg); outline:2px solid var(--fg)}
+
+/* bands */
+.band{padding-block:clamp(44px,7vw,88px); border-top:1px solid var(--line)}
+.band h2{font-size:clamp(1.9rem,4.4vw,3rem); line-height:1.1; margin-top:10px}
+.band .intro{max-width:38em; margin-top:16px; color:var(--muted)}
+
+/* beat */
+.beat{display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); gap:clamp(24px,5vw,64px); margin-top:36px; align-items:center}
+.wheel{width:min(100%,300px); margin:0 auto}
+.wheel svg{display:block; width:100%; height:auto}
+.bph{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px}
+.reads{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px 24px; margin:0}
+.reads div{border-top:1px solid var(--line); padding-top:10px; min-width:0}
+.reads dt{font-family:var(--f-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted)}
+.reads dd{margin:4px 0 0; font-family:var(--f-display); font-size:clamp(1.5rem,3.4vw,2.1rem); line-height:1.15; font-variant-numeric:tabular-nums; overflow-wrap:anywhere}
+.beat-tools{display:flex; flex-wrap:wrap; gap:8px; margin-top:22px}
+
+/* inside */
+.inside{display:grid; grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr); gap:clamp(24px,5vw,64px); margin-top:36px}
+.steps{list-style:none; margin:0; padding:0; display:grid; gap:0; counter-reset:s}
+.steps li{counter-increment:s}
+.steps button{width:100%; text-align:left; background:none; border:0; border-top:1px solid var(--line); padding:14px 4px; display:flex; gap:14px; align-items:baseline}
+.steps li:last-child button{border-bottom:1px solid var(--line)}
+.steps button::before{content:counter(s); font-family:var(--f-mono); font-size:12px; color:var(--muted); width:1.2em}
+.steps .nm{font-family:var(--f-display); font-size:1.35rem}
+.steps button[aria-pressed="true"]{background:var(--panel)}
+.steps button[aria-pressed="true"] .nm{color:var(--accent)}
+.panel{background:var(--panel); padding:clamp(20px,3.4vw,36px); border-radius:4px; min-width:0}
+.panel h3{font-size:clamp(1.6rem,3.4vw,2.3rem)}
+.panel .role{margin-top:6px}
+.panel p.body{margin-top:18px; max-width:34em}
+.panel .fact{margin-top:22px; padding-top:14px; border-top:1px solid var(--line); font-family:var(--f-mono); font-size:13px}
+
+/* types */
+.types{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:28px; margin-top:36px}
+.type{border-top:2px solid var(--accent); padding-top:16px; min-width:0}
+.type h3{font-size:1.6rem}
+.type p{margin-top:10px; color:var(--muted)}
+.type .num{margin-top:16px; font-family:var(--f-mono); font-size:13px; color:var(--fg)}
+
+/* specs */
+.specs{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 clamp(24px,5vw,64px); margin:36px 0 0}
+.specs div{border-top:1px solid var(--line); padding:16px 0 18px; min-width:0}
+.specs dt{font-family:var(--f-display); font-size:1.35rem}
+.specs dd{margin:4px 0 0; color:var(--muted)}
+.specs .u{display:inline-block; margin-top:8px; font-family:var(--f-mono); font-size:12px; color:var(--fg)}
+
+/* history */
+.tl{list-style:none; margin:36px 0 0; padding:0}
+.tl li{display:grid; grid-template-columns:minmax(90px,150px) minmax(0,1fr); gap:20px; border-top:1px solid var(--line); padding:16px 0 18px}
+.tl .yr{font-family:var(--f-display); font-size:clamp(1.5rem,3vw,2.1rem); color:var(--accent); line-height:1.1; font-variant-numeric:lining-nums}
+.tl h3{font-size:1.3rem}
+.tl p{margin-top:4px; color:var(--muted); max-width:40em}
+
+footer{border-top:1px solid var(--line); padding-block:28px 40px; color:var(--muted); font-size:14px}
+
+/* svg text */
+.num-t{font-family:var(--f-display); font-weight:500}
+.mono-t{font-family:var(--f-mono)}
+
+@media (max-width:860px){
+  .hero,.beat,.inside{grid-template-columns:minmax(0,1fr)}
+  .types{grid-template-columns:minmax(0,1fr)}
+  .specs{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:480px){
+  .ctl{grid-template-columns:minmax(0,1fr)}
+  .tl li{grid-template-columns:minmax(0,1fr); gap:4px}
+}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span class="mark">Hairspring</span>
+    <nav class="nav" aria-label="Sections">
+      <button type="button" data-go="beat">Beat</button>
+      <button type="button" data-go="inside">Inside</button>
+      <button type="button" data-go="types">Types</button>
+      <button type="button" data-go="specs">Specs</button>
+      <button type="button" data-go="history">History</button>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div>
+      <p class="mono">A field guide to watches</p>
+      <h1 style="margin-top:14px"><em>Eight beats a second,</em> all day, from one wound spring.</h1>
+      <p class="lede">A mechanical watch counts time with a tiny wheel that swings back and forth. <strong>Build one on this page</strong>, switch its movement, then see what the numbers on a spec sheet actually mean.</p>
+      <div class="hero-actions">
+        <button type="button" class="btn solid" data-go="beat">Watch the balance swing</button>
+        <button type="button" class="btn" data-go="specs">Read a spec sheet</button>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="watchbox" id="watchbox"></div>
+      <div class="digital"><span id="digital">--:--:--</span><span id="beatnote">8 beats / sec</span></div>
+      <div class="ctls">
+        <div class="ctl"><span class="mono">Dial</span><div class="opts" id="cDial"></div></div>
+        <div class="ctl"><span class="mono">Case</span><div class="opts" id="cCase"></div></div>
+        <div class="ctl"><span class="mono">Strap</span><div class="opts" id="cStrap"></div></div>
+        <div class="ctl"><span class="mono">Hands</span><div class="opts" id="cHands"></div></div>
+        <div class="ctl"><span class="mono">Movement</span><div class="opts" id="cMove"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="beat">
+    <p class="mono">Beat rate</p>
+    <h2>The balance wheel is the clock. Everything else counts its swings.</h2>
+    <p class="intro">Pick a beat rate. The wheel below swings at that speed, a little over 270 degrees each way, the way a real one does. Slow it down to see each swing.</p>
+    <div class="beat">
+      <div class="wheel" id="wheelbox"></div>
+      <div>
+        <div class="bph" id="bph" role="group" aria-label="Beat rate in beats per hour"></div>
+        <dl class="reads">
+          <div><dt>Beats per second</dt><dd id="rBps">8</dd></div>
+          <div><dt>Full swings per second</dt><dd id="rHz">4 Hz</dd></div>
+          <div><dt>Beats per day</dt><dd id="rDay">691,200</dd></div>
+          <div><dt>Beats per year</dt><dd id="rYear">252,288,000</dd></div>
+          <div style="grid-column:1/-1"><dt>Beats since you opened this page</dt><dd id="rNow">0</dd></div>
+        </dl>
+        <div class="beat-tools">
+          <button type="button" class="seg" id="bSlow" aria-pressed="false">Slow motion 1/10</button>
+          <button type="button" class="seg" id="bPause" aria-pressed="false">Pause wheel</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="inside">
+    <p class="mono">Inside the case</p>
+    <h2>Five parts, one path for the energy.</h2>
+    <p class="intro">Power flows from the spring to the hands, and the balance decides how fast it may go. Select a part.</p>
+    <div class="inside">
+      <ol class="steps" id="steps"></ol>
+      <div class="panel" aria-live="polite">
+        <h3 id="pName"></h3>
+        <p class="mono role" id="pRole"></p>
+        <p class="body" id="pBody"></p>
+        <p class="fact" id="pFact"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="types">
+    <p class="mono">Three ways to run</p>
+    <h2>Who does the winding, and who does the counting.</h2>
+    <div class="types">
+      <article class="type">
+        <h3>Hand-wound</h3>
+        <p>You turn the crown, usually once a day. The simplest mechanical layout, so the movement can be very thin.</p>
+        <p class="num">Reserve: about 38 to 80 hours</p>
+      </article>
+      <article class="type">
+        <h3>Automatic</h3>
+        <p>A weighted rotor swings with your wrist and winds the spring for you. Leave it off for a couple of days and it stops.</p>
+        <p class="num">Rotor wound by wrist motion</p>
+      </article>
+      <article class="type">
+        <h3>Quartz</h3>
+        <p>A battery sends current through a small quartz crystal that vibrates at a fixed rate. A circuit counts it and steps the hands once a second.</p>
+        <p class="num">Crystal: 32,768 Hz</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="band" id="specs">
+    <p class="mono">Spec sheet</p>
+    <h2>Seven numbers worth reading.</h2>
+    <dl class="specs">
+      <div><dt>Case diameter</dt><dd>Width of the case without the crown. Most everyday and dress watches fall between 36 and 42 mm.</dd><span class="u">mm</span></div>
+      <div><dt>Lug-to-lug</dt><dd>Distance from the tip of the top lugs to the tip of the bottom lugs. It decides whether a watch sits on your wrist or hangs over the edge.</dd><span class="u">mm</span></div>
+      <div><dt>Lug width</dt><dd>Space between the lugs, which is the strap width you can fit. 18, 20 and 22 mm are common.</dd><span class="u">mm</span></div>
+      <div><dt>Water resistance</dt><dd>A pressure test rating, not a depth you should dive to. 30 m means splashes. 100 m is fine for swimming. ISO 6425 covers dive watches.</dd><span class="u">m, or ATM (1 ATM is about 10 m)</span></div>
+      <div><dt>Power reserve</dt><dd>How long a fully wound mechanical watch keeps running with no further winding.</dd><span class="u">hours</span></div>
+      <div><dt>Beat rate</dt><dd>Half-swings of the balance in one hour. Higher rates tend to steady the watch against knocks, and wear the oil faster.</dd><span class="u">bph, or Hz</span></div>
+      <div><dt>Accuracy</dt><dd>COSC chronometer certification allows a mechanical movement between minus 4 and plus 6 seconds a day.</dd><span class="u">seconds per day</span></div>
+    </dl>
+  </section>
+
+  <section class="band" id="history">
+    <p class="mono">A short timeline</p>
+    <h2>From a pocket spring to a computer on the wrist.</h2>
+    <ol class="tl">
+      <li><span class="yr">c. 1510</span><div><h3>Portable clocks in Nuremberg</h3><p>Peter Henlein is traditionally credited with small spring-driven timekeepers worn on the body. Historians still argue over the details.</p></div></li>
+      <li><span class="yr">1675</span><div><h3>The balance spring</h3><p>Christiaan Huygens adds a spiral spring to the balance wheel. Pocket watches become far steadier.</p></div></li>
+      <li><span class="yr">1761</span><div><h3>Harrison's H4 goes to sea</h3><p>John Harrison's marine chronometer is tested on a voyage to Jamaica and keeps time well enough to find longitude.</p></div></li>
+      <li><span class="yr">1926</span><div><h3>The Oyster case</h3><p>Rolex launches a wristwatch case sealed with a screw-down crown, and sells the idea of a watch you can get wet.</p></div></li>
+      <li><span class="yr">1969</span><div><h3>Seiko Astron</h3><p>The first quartz wristwatch goes on sale in Tokyo on Christmas Day. Mechanical watchmaking has to find a new reason to exist.</p></div></li>
+      <li><span class="yr">2015</span><div><h3>Apple Watch</h3><p>A watch that runs apps ships in April. The mechanical beat carries on beside it.</p></div></li>
+    </ol>
+  </section>
+
+  <footer>
+    <p>Hairspring is a small field guide. The watch at the top shows the clock of the device you are using.</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var $ = function(s){ return document.querySelector(s); };
+  var reduce = false;
+  try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+
+  /* ---------- nav ---------- */
+  document.querySelectorAll('[data-go]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var el = document.getElementById(b.getAttribute('data-go'));
+      if (el) el.scrollIntoView({behavior: reduce ? 'auto' : 'smooth', block:'start'});
+    });
+  });
+
+  /* ---------- watch data ---------- */
+  var DIALS = [
+    {id:'forest',  name:'Forest',   a:'#1B5A3F', b:'#0E2D20', ink:'#EDEBDD', lume:'#D6E8C4', sec:'#E0A93E'},
+    {id:'slate',   name:'Slate',    a:'#4A5964', b:'#27323A', ink:'#E8EDF0', lume:'#CFE3F0', sec:'#EE7B3A'},
+    {id:'bone',    name:'Bone',     a:'#F1EEE4', b:'#D8D4C6', ink:'#1A1C1E', lume:'#9EB59A', sec:'#C2381F'},
+    {id:'ink',     name:'Ink',      a:'#1A2029', b:'#07090D', ink:'#E6E8EB', lume:'#BFE8D6', sec:'#EE7B3A'},
+    {id:'burgundy',name:'Burgundy', a:'#7A2335', b:'#3B0F1A', ink:'#F2E4DA', lume:'#EAD7B0', sec:'#E8C36A'}
+  ];
+  var CASES = [
+    {id:'steel', name:'Steel', m1:'#F4F6F7', m2:'#A9B2B8', m3:'#59616A'},
+    {id:'gold',  name:'Gold',  m1:'#F6E1A3', m2:'#C99B3C', m3:'#76531A'},
+    {id:'black', name:'Black', m1:'#5A6068', m2:'#24292E', m3:'#0A0C0E'}
+  ];
+  var STRAPS = [
+    {id:'brown', name:'Brown leather', c:'#6E4528', st:'#D2AE7C'},
+    {id:'black', name:'Black leather', c:'#1C1E21', st:'#7B8188'},
+    {id:'green', name:'Green leather', c:'#2D4C3B', st:'#A5BFAF'}
+  ];
+  var HANDS = [{id:'baton', name:'Baton'},{id:'leaf', name:'Leaf'}];
+  var MOVES = [{id:'mech', name:'Automatic 28,800'},{id:'quartz', name:'Quartz'}];
+  var state = {dial:0, kase:0, strap:0, hands:0, move:'mech'};
+
+  /* ---------- build watch svg ---------- */
+  var cx = 200, cy = 300;
+  function pos(r, deg){ var a = (deg-90)*Math.PI/180; return [cx + r*Math.cos(a), cy + r*Math.sin(a)]; }
+
+  var ticks = '';
+  for (var i=0;i<60;i++){
+    var big = i%5===0;
+    ticks += '<line x1="0" y1="-108" x2="0" y2="'+(big?-99:-104)+'" transform="translate('+cx+' '+cy+') rotate('+(i*6)+')" stroke="currentColor" stroke-width="'+(big?1.6:0.8)+'"/>';
+  }
+  var batons = '';
+  [1,2,4,5,7,8,10,11].forEach(function(h){
+    batons += '<g transform="translate('+cx+' '+cy+') rotate('+(h*30)+')"><rect x="-3.5" y="-97" width="7" height="31" fill="currentColor"/><rect x="-1.5" y="-95" width="3" height="27" style="fill:var(--lume)"/></g>';
+  });
+  var p12 = pos(76,0), p6 = pos(76,180), p9 = pos(76,270);
+  var numerals =
+    '<text class="num-t" x="'+p12[0]+'" y="'+p12[1]+'" font-size="30" text-anchor="middle" dominant-baseline="central" fill="currentColor">12</text>'+
+    '<text class="num-t" x="'+p6[0]+'" y="'+p6[1]+'" font-size="30" text-anchor="middle" dominant-baseline="central" fill="currentColor">6</text>'+
+    '<text class="num-t" x="'+p9[0]+'" y="'+p9[1]+'" font-size="30" text-anchor="middle" dominant-baseline="central" fill="currentColor">9</text>';
+
+  var holes = '';
+  for (var k=0;k<5;k++){ holes += '<circle cx="200" cy="'+(486+k*26)+'" r="4" fill="#000" fill-opacity=".55"/>'; }
+  var crownLines = '';
+  for (var c=0;c<5;c++){ crownLines += '<line x1="'+(327+c*3)+'" y1="289" x2="'+(327+c*3)+'" y2="311" stroke="#000" stroke-opacity=".35" stroke-width="1"/>'; }
+
+  var svg =
+  '<svg id="wsvg" viewBox="0 0 400 600" role="img" aria-label="Analog watch showing the current time">'+
+  '<defs>'+
+    '<linearGradient id="gCase" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--m1)"/><stop offset=".5" style="stop-color:var(--m2)"/><stop offset="1" style="stop-color:var(--m3)"/></linearGradient>'+
+    '<radialGradient id="gDial" cx=".5" cy=".5" r=".6"><stop offset="0" style="stop-color:var(--d1)"/><stop offset="1" style="stop-color:var(--d2)"/></radialGradient>'+
+    '<radialGradient id="gSun" cx=".32" cy=".26" r=".95"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".3"/></radialGradient>'+
+    '<linearGradient id="gStrap" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".4"/><stop offset=".3" stop-color="#000" stop-opacity="0"/><stop offset=".7" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".4"/></linearGradient>'+
+  '</defs>'+
+  /* straps */
+  '<rect x="160" y="0" width="80" height="210" style="fill:var(--strap)"/><rect x="160" y="0" width="80" height="210" fill="url(#gStrap)"/>'+
+  '<line x1="169" y1="0" x2="169" y2="200" style="stroke:var(--stitch)" stroke-width="1.4" stroke-dasharray="6 5"/><line x1="231" y1="0" x2="231" y2="200" style="stroke:var(--stitch)" stroke-width="1.4" stroke-dasharray="6 5"/>'+
+  '<rect x="160" y="390" width="80" height="210" style="fill:var(--strap)"/><rect x="160" y="390" width="80" height="210" fill="url(#gStrap)"/>'+
+  '<line x1="169" y1="400" x2="169" y2="600" style="stroke:var(--stitch)" stroke-width="1.4" stroke-dasharray="6 5"/><line x1="231" y1="400" x2="231" y2="600" style="stroke:var(--stitch)" stroke-width="1.4" stroke-dasharray="6 5"/>'+
+  holes+
+  /* lugs */
+  '<g fill="url(#gCase)" stroke="#000" stroke-opacity=".3" stroke-width="1">'+
+    '<rect x="132" y="164" width="28" height="62" rx="5"/><rect x="240" y="164" width="28" height="62" rx="5"/>'+
+    '<rect x="132" y="374" width="28" height="62" rx="5"/><rect x="240" y="374" width="28" height="62" rx="5"/>'+
+  '</g>'+
+  /* crown */
+  '<rect x="324" y="287" width="18" height="26" rx="3" fill="url(#gCase)" stroke="#000" stroke-opacity=".3"/>'+crownLines+
+  /* case + bezel */
+  '<circle cx="200" cy="300" r="128" fill="url(#gCase)" stroke="#000" stroke-opacity=".3" stroke-width="1"/>'+
+  '<circle cx="200" cy="300" r="117" fill="none" stroke="#000" stroke-opacity=".35" stroke-width="1.5"/>'+
+  '<circle cx="200" cy="300" r="115" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="1"/>'+
+  /* dial */
+  '<circle cx="200" cy="300" r="113" fill="url(#gDial)"/><circle cx="200" cy="300" r="113" fill="url(#gSun)"/>'+
+  '<g id="marks" style="color:var(--ink)">'+ticks+batons+numerals+
+    '<text class="mono-t" x="200" y="252" font-size="10.5" letter-spacing="3.2" text-anchor="middle" fill="currentColor">HAIRSPRING</text>'+
+    '<text class="mono-t" id="dlabel" x="200" y="346" font-size="8" letter-spacing="2" text-anchor="middle" fill="currentColor" fill-opacity=".8">AUTOMATIC</text>'+
+    '<text class="mono-t" x="200" y="357" font-size="8" letter-spacing="2" text-anchor="middle" fill="currentColor" fill-opacity=".8">100 M</text>'+
+    '<rect x="259" y="288" width="34" height="24" fill="#F2F0E8" stroke="currentColor" stroke-width="1.2"/>'+
+    '<text class="mono-t" id="ddate" x="276" y="300.5" font-size="14" text-anchor="middle" dominant-baseline="central" fill="#15171A">1</text>'+
+  '</g>'+
+  /* hands */
+  '<g transform="translate('+cx+' '+cy+')">'+
+    '<g id="hH" style="color:var(--ink)"></g><g id="hM" style="color:var(--ink)"></g><g id="hS"></g>'+
+    '<circle r="6.5" style="fill:var(--ink)"/><circle r="2.6" style="fill:var(--sec)"/>'+
+  '</g>'+
+  '</svg>';
+  $('#watchbox').innerHTML = svg;
+
+  var wsvg = $('#wsvg'), hH = $('#hH'), hM = $('#hM'), hS = $('#hS');
+  var dlabel = $('#dlabel'), ddate = $('#ddate'), digital = $('#digital'), beatnote = $('#beatnote');
+
+  function handsMarkup(style){
+    if (style === 'leaf'){
+      hH.innerHTML = '<path d="M0 -64 L9 -28 L0 12 L-9 -28 Z" fill="currentColor"/><path d="M0 -54 L3.8 -28 L0 -6 L-3.8 -28 Z" style="fill:var(--lume)"/>';
+      hM.innerHTML = '<path d="M0 -95 L6.5 -40 L0 12 L-6.5 -40 Z" fill="currentColor"/><path d="M0 -86 L2.6 -42 L0 -8 L-2.6 -42 Z" style="fill:var(--lume)"/>';
+    } else {
+      hH.innerHTML = '<rect x="-4.5" y="-64" width="9" height="76" rx="1" fill="currentColor"/><rect x="-2" y="-58" width="4" height="44" style="fill:var(--lume)"/>';
+      hM.innerHTML = '<rect x="-3.5" y="-95" width="7" height="107" rx="1" fill="currentColor"/><rect x="-1.4" y="-89" width="2.8" height="66" style="fill:var(--lume)"/>';
+    }
+    hS.innerHTML = '<rect x="-1" y="-102" width="2" height="128" style="fill:var(--sec)"/><rect x="-2.6" y="14" width="5.2" height="12" style="fill:var(--sec)"/><circle cy="-76" r="4.2" style="fill:var(--sec)"/>';
+  }
+
+  function applyLook(){
+    var d = DIALS[state.dial], k = CASES[state.kase], s = STRAPS[state.strap];
+    var st = wsvg.style;
+    st.setProperty('--d1', d.a); st.setProperty('--d2', d.b); st.setProperty('--ink', d.ink);
+    st.setProperty('--lume', d.lume); st.setProperty('--sec', d.sec);
+    st.setProperty('--m1', k.m1); st.setProperty('--m2', k.m2); st.setProperty('--m3', k.m3);
+    st.setProperty('--strap', s.c); st.setProperty('--stitch', s.st);
+    handsMarkup(HANDS[state.hands].id);
+    var q = state.move === 'quartz';
+    dlabel.textContent = q ? 'QUARTZ' : 'AUTOMATIC';
+    beatnote.textContent = q ? '1 tick / sec' : '8 beats / sec';
+  }
+
+  /* ---------- controls ---------- */
+  function group(el, items, key, kind){
+    el.innerHTML = '';
+    items.forEach(function(it, idx){
+      var b = document.createElement('button');
+      b.type = 'button';
+      var val = (key === 'move') ? it.id : idx;
+      if (kind === 'sw'){
+        b.className = 'sw';
+        b.setAttribute('aria-label', it.name);
+        b.title = it.name;
+        var bg = it.a ? 'radial-gradient(circle at 35% 30%,'+it.a+','+it.b+')' :
+                 it.m1 ? 'linear-gradient(135deg,'+it.m1+','+it.m2+' 55%,'+it.m3+')' : it.c;
+        b.style.background = bg;
+      } else {
+        b.className = 'seg';
+        b.textContent = it.name;
+      }
+      b.addEventListener('click', function(){
+        state[key] = val;
+        refresh();
+        applyLook();
+      });
+      b.dataset.val = String(val);
+      el.appendChild(b);
+    });
+  }
+  function refresh(){
+    [['#cDial','dial'],['#cCase','kase'],['#cStrap','strap'],['#cHands','hands'],['#cMove','move']].forEach(function(p){
+      document.querySelectorAll(p[0]+' button').forEach(function(b){
+        b.setAttribute('aria-pressed', String(b.dataset.val) === String(state[p[1]]) ? 'true' : 'false');
+      });
+    });
+  }
+  group($('#cDial'), DIALS, 'dial', 'sw');
+  group($('#cCase'), CASES, 'kase', 'sw');
+  group($('#cStrap'), STRAPS, 'strap', 'sw');
+  group($('#cHands'), HANDS, 'hands', 'seg');
+  group($('#cMove'), MOVES, 'move', 'seg');
+  refresh(); applyLook();
+
+  /* ---------- balance wheel ---------- */
+  var spiral = '';
+  for (var n=0;n<=260;n++){
+    var t = n/260, r = 14 + t*36, a = t*Math.PI*2*5.5;
+    spiral += (n?'L':'M') + (150 + r*Math.cos(a)).toFixed(2) + ' ' + (150 + r*Math.sin(a)).toFixed(2);
+  }
+  var screws = '';
+  for (var m=0;m<12;m++){
+    var aa = m*30*Math.PI/180;
+    screws += '<circle cx="'+(150+96*Math.cos(aa)).toFixed(2)+'" cy="'+(150+96*Math.sin(aa)).toFixed(2)+'" r="4.2" style="fill:var(--accent)"/>';
+  }
+  $('#wheelbox').innerHTML =
+  '<svg viewBox="0 0 300 300" role="img" aria-label="Balance wheel and hairspring swinging back and forth">'+
+    '<circle cx="150" cy="150" r="140" style="fill:var(--panel)" />'+
+    '<circle cx="150" cy="150" r="140" fill="none" style="stroke:var(--line)" stroke-width="1"/>'+
+    '<path d="M150 20 L143 6 L157 6 Z" style="fill:var(--accent)"/>'+
+    '<g id="bal">'+
+      '<circle cx="150" cy="150" r="96" fill="none" style="stroke:var(--fg)" stroke-width="7"/>'+
+      '<line x1="54" y1="150" x2="246" y2="150" style="stroke:var(--fg)" stroke-width="6"/>'+
+      '<line x1="150" y1="54" x2="150" y2="246" style="stroke:var(--fg)" stroke-width="3" stroke-opacity=".6"/>'+
+      screws+
+      '<path d="'+spiral+'" fill="none" style="stroke:var(--accent)" stroke-width="1.3"/>'+
+      '<circle cx="150" cy="150" r="9" style="fill:var(--fg)"/><circle cx="150" cy="150" r="3" style="fill:var(--bg)"/>'+
+    '</g>'+
+  '</svg>';
+  var bal = $('#bal');
+
+  var BPH = [18000, 21600, 28800, 36000];
+  var beat = {bph:28800, slow:false, paused:reduce};
+  var bphEl = $('#bph');
+  BPH.forEach(function(v){
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'seg'; b.dataset.val = String(v);
+    b.textContent = v.toLocaleString('en-US') + ' bph';
+    b.addEventListener('click', function(){ beat.bph = v; syncBeat(); });
+    bphEl.appendChild(b);
+  });
+  function fmt(x){ return Math.round(x).toLocaleString('en-US'); }
+  function syncBeat(){
+    bphEl.querySelectorAll('button').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.val) === String(beat.bph) ? 'true':'false'); });
+    var bps = beat.bph/3600;
+    $('#rBps').textContent = (Math.round(bps*10)/10).toString();
+    $('#rHz').textContent = (Math.round(beat.bph/7200*100)/100) + ' Hz';
+    $('#rDay').textContent = fmt(beat.bph*24);
+    $('#rYear').textContent = fmt(beat.bph*24*365);
+    $('#bSlow').setAttribute('aria-pressed', String(beat.slow));
+    $('#bPause').setAttribute('aria-pressed', String(beat.paused));
+  }
+  $('#bSlow').addEventListener('click', function(){ beat.slow = !beat.slow; syncBeat(); });
+  $('#bPause').addEventListener('click', function(){ beat.paused = !beat.paused; syncBeat(); });
+  syncBeat();
+
+  /* ---------- inside ---------- */
+  var PARTS = [
+    {n:'Mainspring', r:'Stores the energy', b:'A coiled steel ribbon inside a barrel. Winding the crown, or the swing of an automatic rotor, tightens it. As it relaxes, it turns the gears.', f:'Typical power reserve: 38 to 80 hours'},
+    {n:'Gear train', r:'Slows the power down', b:'A set of wheels turns the spring’s strong, fast pull into a slow, even rotation. In a standard layout the center wheel turns once an hour, and the fourth wheel, which carries the seconds hand, turns once a minute.', f:'Center wheel to fourth wheel: 1 hour to 1 minute'},
+    {n:'Escapement', r:'Lets energy out one tooth at a time', b:'The escape wheel is held back by a pallet fork. Each swing of the balance frees one tooth, and the wheel locks again a moment later. That lock and release is the tick you hear, and each release gives the balance a small push to keep it going.', f:'Swiss lever escape wheel: 15 teeth'},
+    {n:'Balance and hairspring', r:'Keeps the beat', b:'A weighted wheel swings back and forth, pulled home each time by a spiral spring thinner than a human hair. A good balance takes close to the same time per swing whether the watch is fully wound or nearly run down. That steadiness is what makes the watch a clock.', f:'28,800 bph = 4 full swings a second'},
+    {n:'Hands and dial', r:'Shows the count', b:'Under the dial, a few small wheels called the motion works turn the minute hand and the hour hand from the same gear train. The gearing makes the minute hand turn twelve times for each turn of the hour hand.', f:'Minute hand to hour hand: 12 to 1'}
+  ];
+  var stepsEl = $('#steps'), cur = 3;
+  PARTS.forEach(function(p, i){
+    var li = document.createElement('li'), b = document.createElement('button');
+    b.type = 'button';
+    b.innerHTML = '<span class="nm"></span>';
+    b.querySelector('.nm').textContent = p.n;
+    b.addEventListener('click', function(){ cur = i; showPart(); });
+    li.appendChild(b); stepsEl.appendChild(li);
+  });
+  function showPart(){
+    var p = PARTS[cur];
+    $('#pName').textContent = p.n; $('#pRole').textContent = p.r;
+    $('#pBody').textContent = p.b; $('#pFact').textContent = p.f;
+    stepsEl.querySelectorAll('button').forEach(function(b, i){ b.setAttribute('aria-pressed', String(i === cur)); });
+  }
+  showPart();
+
+  /* ---------- animation loop ---------- */
+  function pad(n){ return (n<10?'0':'') + n; }
+  var last = performance.now(), phase = 0, beats = 0, lastRead = 0, lastDigital = 0;
+  function frame(now){
+    var dt = (now - last)/1000; last = now;
+    if (dt < 0) dt = 0;
+
+    /* watch */
+    var d = new Date();
+    var s = d.getSeconds() + d.getMilliseconds()/1000;
+    var mnt = d.getMinutes(), hr = d.getHours()%12;
+    var secAngle = state.move === 'quartz' ? Math.floor(s)*6 : Math.floor(s*8)/8*6;
+    hS.setAttribute('transform', 'rotate('+secAngle+')');
+    hM.setAttribute('transform', 'rotate('+((mnt + s/60)*6)+')');
+    hH.setAttribute('transform', 'rotate('+((hr + mnt/60 + s/3600)*30)+')');
+    if (now - lastDigital > 250){
+      lastDigital = now;
+      digital.textContent = pad(d.getHours()) + ':' + pad(mnt) + ':' + pad(d.getSeconds());
+      ddate.textContent = String(d.getDate());
+    }
+
+    /* balance */
+    beats += dt * beat.bph/3600;
+    if (!beat.paused){
+      var step = Math.min(dt, 0.1);
+      phase += step * (beat.bph/7200) * (beat.slow ? 0.1 : 1);
+    }
+    bal.setAttribute('transform', 'rotate('+(280*Math.sin(phase*2*Math.PI)).toFixed(2)+' 150 150)');
+    if (now - lastRead > 100){
+      lastRead = now;
+      $('#rNow').textContent = fmt(beats);
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
